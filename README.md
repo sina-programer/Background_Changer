@@ -23,6 +23,7 @@ because you can see the preview of your image before submitting it for your back
 
 ### Requirements:
 - PIL `pip install pillow`
+- PyWin32 `pip install pywin32` only for python 3.10 or higher
 
 ### Preview:
 ![preview](/Files/preview.png)
