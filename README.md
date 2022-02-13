@@ -5,7 +5,6 @@
   - [Features](#features)
   - [Requirements](#requirements)
   - [Preview](#preview)
-  - [Credits](#credits)
 - [Reach Me](#reach-me)
 - [See Also](#see-also)
 
