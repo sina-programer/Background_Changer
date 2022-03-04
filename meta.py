@@ -25,6 +25,11 @@ class Geometry:
         return f"{Geometry.width}x{Geometry.height}+{Geometry.start_width}+{Geometry.start_height}"
 
 
+class Monitor:
+    width = Geometry.width - 50
+    height = Geometry.height - 100
+
+
 links = {
     'github': 'https://github.com/sina-programer',
     'instagram': 'https://www.instagram.com/sina.programer',
