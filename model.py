@@ -27,7 +27,7 @@ class App:
 
         self.presets = self.load_presets()
         self.photos = self.presets.copy()
-        self.photo = self.photos[-1]
+        self.photo = self.photos[-1]  # just for self.photo not empty
 
         # Widgets
         self.adrs_bar = elements.Entry(master, 74, 100, 410)
@@ -48,26 +48,29 @@ class App:
         self.next_btn = tk.Button(self.master, image=next_img, bd=0, command=lambda: self.slide_right())
         self.next_btn.place(x=meta.Geometry.width - 25, y=150)
 
-        self.monitor = elements.Monitor(master)
+        self.monitor = tk.Label(self.master, width=meta.Monitor.width, height=meta.Monitor.height)
+        self.monitor.pack(pady=10)
+
         self.show(self.presets[0])
 
     def show(self, photo):
         if photo != self.photo:
-            if photo.basedir != self.photo.basedir:
+            if not os.path.samefile(photo.basedir, self.photo.basedir):
                 self.photos = self.load_images(photo.basedir)
 
             self.photo = photo
             self.photo.load_image()
 
+            self.update_image_size(self.photo.size)
             self.photo_width_lbl.change(f"Photo width: {self.photo.real_dims[0]}")
             self.photo_height_lbl.change(f"Photo height: {self.photo.real_dims[1]}")
-            self.update_image_size(self.photo.size)
 
             self.master.title(f'{meta.title} - {self.photo.title}')
             self.adrs_bar.insert(self.photo.label)
 
             self.check_index()
-            self.monitor.show(self.photo.image)
+            self.monitor.config(image=self.photo.image)
+            self.master.mainloop()
 
     def submit(self):
         windll.user32.SystemParametersInfoA(20, 0, c_char_p(self.photo.path.encode()), 0)
@@ -81,9 +84,9 @@ class App:
     def browse(self):
         ''' this method for browse button '''
         new_path = filedialog.askopenfilename(filetypes=meta.file_types)
-        new_path = new_path.replace('/', '\\')
 
         if new_path:
+            new_path = os.path.normpath(new_path)
             if new_path.endswith(meta.supported_formats):
                 index = self.get_index(new_path)
                 self.show(Photo(new_path, index))
@@ -93,22 +96,26 @@ class App:
 
     def relode(self):
         ''' this method for relode preview image with press <Enter> '''
-        new_path = self.adrs_bar.get().replace('/', '\\')
+        new_path = self.adrs_bar.get()
 
-        if new_path in meta.presets_label:
-            index = meta.presets_label.index(new_path)
-            return self.show(self.presets[index])
+        if new_path:
+            new_path = os.path.normpath(new_path)
 
-        if os.path.exists(new_path):
-            if new_path.endswith(meta.supported_formats):
-                new_photo = Photo(new_path, index=self.get_index(new_path))
-                self.show(new_photo)
+            if new_path in meta.presets_label:
+                index = meta.presets_label.index(new_path)
+                return self.show(self.presets[index])
 
+            if os.path.exists(new_path):
+                if new_path.endswith(meta.supported_formats):
+                    new_photo = Photo(new_path, index=self.get_index(new_path))
+                    self.show(new_photo)
+
+                else:
+                    messagebox.showwarning('ERROR', meta.errors['unsupport'])
             else:
-                messagebox.showwarning('ERROR', meta.errors['unsupport'])
-
+                messagebox.showwarning('ERROR', meta.errors['invalid'])
         else:
-            messagebox.showwarning('ERROR', meta.errors['invalid'])
+            messagebox.showwarning('ERROR', meta.errors['empty'])
 
     def slide_right(self):
         if self.photo.index != len(self.photos) - 1:
@@ -130,7 +137,7 @@ class App:
             self.next_btn.config(state='normal')
 
     def load_images(self, path):
-        if path == meta.presets_folder:
+        if os.path.samefile(meta.presets_folder, path):
             return self.presets
         else:
             files = [os.path.join(path, file) for file in os.listdir(path) if file.endswith(meta.supported_formats)]
@@ -169,7 +176,7 @@ class App:
 
         index = self.get_index(path)
         basedir, filename = os.path.split(path)
-        if basedir == meta.presets_folder:
+        if os.path.samefile(meta.presets_folder, basedir):
             return self.presets[index]
         else:
             return Photo(path, index)
@@ -177,7 +184,7 @@ class App:
     def get_index(self, filepath):
         basepath, basename = os.path.split(filepath)
 
-        if basepath == meta.presets_folder:
+        if os.path.samefile(meta.presets_folder, basepath):
             return meta.presets.index(filepath)
 
         elif basepath == 'Presets':
@@ -187,9 +194,12 @@ class App:
                 return int(basename)
 
         else:
-            files = os.listdir(basepath)
-            images = [filename for filename in files if filename.endswith(meta.supported_formats)]
-            return images.index(basename)
+            idx = 0
+            for file in os.listdir(basepath):
+                if file.endswith(meta.supported_formats):
+                    if basename == file:
+                        return idx
+                    idx += 1
 
     def hotkey_handler(self, func, *args, **kwargs):
         if not self.adrs_bar.is_active:
@@ -266,18 +276,18 @@ class Photo:
 
     def get_new_dims(self):
         dims = list(self.real_dims)
-        if (ratio := dims[0] / elements.Monitor.width) > 1:
+        if (ratio := dims[0] / meta.Monitor.width) > 1:
             dims[0] = int(dims[0] / ratio)
             dims[1] = int(dims[1] / ratio)
 
-        if (ratio := dims[1] / elements.Monitor.height) > 1:
+        if (ratio := dims[1] / meta.Monitor.height) > 1:
             dims[0] = int(dims[0] / ratio)
             dims[1] = int(dims[1] / ratio)
 
         return dims
 
     def __eq__(self, obj):
-        if self.path == obj.path:
+        if os.path.samefile(self.path, obj.path):
             return True
         else:
             return False
