@@ -2,24 +2,6 @@
 
 import tkinter as tk
 
-import meta
-
-
-class Monitor:
-    width = meta.Geometry.width - 50
-    height = meta.Geometry.height - 100
-    __slots__ = ['master', 'monitor']
-
-    def __init__(self, master):
-        self.master = master
-
-        self.monitor = tk.Label(self.master, width=self.width, height=self.height)
-        self.monitor.pack(pady=10)
-
-    def show(self, photo):
-        self.monitor.config(image=photo)
-        self.master.mainloop()
-
 
 class Entry:
     _hover_color = '#DBDBDB'
